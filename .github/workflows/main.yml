@@ -11,19 +11,8 @@ jobs:
         include:
           - os: ubuntu-latest
             ext: ""
-            out: "bin/main"
-            sed-flag: ""
-            upx-flag: ""
           - os: windows-latest
             ext: ".exe"
-            out: "bin/main"
-            sed-flag: ""
-            upx-flag: ""
-          - os: macos-latest
-            ext: ""
-            out: "bin/dandanplay"
-            sed-flag: "''"
-            upx-flag: "--force-macos"
 
     steps:
     - name: Checkout repository
@@ -42,24 +31,19 @@ jobs:
       if: matrix.os == 'windows-latest'
       run: choco install upx
 
-    - name: Install UPX on MacOS
-      if: matrix.os == 'macos-latest'
-      run: brew install upx
-
     - name: Build the application
       shell: bash
       run: |
-        sed -i ${{ matrix.sed-flag }} 's/AppId\s*=\s*".*"/AppId = "${{ secrets.AppId }}"/' main.go
-        sed -i ${{ matrix.sed-flag }} 's/AppSecret\s*=\s*".*"/AppSecret = "${{ secrets.AppSecret }}"/' main.go
-        go build -ldflags="-s -w" -o ${{ matrix.out }} main.go
+        sed -i 's/AppId\s*=\s*".*"/AppId = "${{ secrets.AppId }}"/' main.go
+        sed -i 's/AppSecret\s*=\s*".*"/AppSecret = "${{ secrets.AppSecret }}"/' main.go
+        go build -ldflags="-s -w" -o bin/main main.go
         rm -f main.go
 
     - name: Compress with UPX
-      if: matrix.os != 'macos-latest'
-      run: upx ${{ matrix.upx-flag }} --best --lzma -o bin/dandanplay${{ matrix.ext }} ${{ matrix.out }}
+      run: upx --best --lzma -o bin/dandanplay${{ matrix.ext }} bin/main
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: dandanplay-${{ matrix.os }}${{ matrix.ext }}
+        name: dandanplay${{ matrix.ext }}
         path: bin/dandanplay${{ matrix.ext }}
